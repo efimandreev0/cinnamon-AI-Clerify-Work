@@ -30,6 +30,7 @@ typedef struct {
     StringBooleanEntry* instanceVarsToBeTraced;
     StringBooleanEntry* functionCallsToBeTraced;
     bool headless;
+    bool traceFrames;
     bool printRooms;
     bool printDeclaredFunctions;
 } CommandLineArgs;
@@ -46,6 +47,7 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
         {"trace-global-vars", required_argument,         nullptr, 't'},
         {"trace-instance-vars", required_argument,         nullptr, 'i'},
         {"trace-function-calls", required_argument,         nullptr, 'c'},
+        {"trace-frames", no_argument, nullptr, 'k'},
         {nullptr,               0,                 nullptr,  0 }
     };
 
@@ -85,6 +87,9 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
                 break;
             case 'c':
                 shput(args->functionCallsToBeTraced, optarg, true);
+                break;
+            case 'k':
+                args->traceFrames = true;
                 break;
             default:
                 fprintf(stderr, "Usage: %s [--headless] [--screenshot=PATTERN] [--screenshot-at-frame=N ...] <path to data.win or game.unx>\n", argv[0]);
@@ -205,6 +210,8 @@ int main(int argc, char* argv[]) {
     if (args.headless) {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwSwapInterval(0); // Disable v-sync if we are running in headless mode
+    } else {
+        glfwSwapInterval(1);
     }
 
     GLFWwindow* window = glfwCreateWindow((int) gen8->defaultWindowWidth, (int) gen8->defaultWindowHeight, windowTitle, nullptr, nullptr);
@@ -233,6 +240,9 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {
+        if (args.traceFrames)
+            printf("Frame %d (Start)\n", runner->frameCount);
+
         // Run one game step (Begin Step, Step, End Step, room transitions)
         Runner_step(runner);
 
@@ -258,6 +268,9 @@ int main(int argc, char* argv[]) {
                 glfwSetWindowShouldClose(window, GLFW_TRUE);
             }
         }
+
+        if (args.traceFrames)
+            printf("Frame %d (End)\n", runner->frameCount);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
