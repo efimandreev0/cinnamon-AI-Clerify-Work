@@ -27,6 +27,7 @@ typedef struct {
     const char* screenshotPattern;
     FrameSetEntry* screenshotFrames;
     StringBooleanEntry* tracedGlobalVars;
+    StringBooleanEntry* tracedInstanceVars;
     bool headless;
     bool printRooms;
     bool printDeclaredFunctions;
@@ -42,6 +43,7 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
         {"print-rooms", no_argument,               nullptr, 'r'},
         {"print-declared-functions", no_argument,  nullptr, 'p'},
         {"trace-global-vars", required_argument,         nullptr, 't'},
+        {"trace-instance-vars", required_argument,         nullptr, 'i'},
         {nullptr,               0,                 nullptr,  0 }
     };
 
@@ -76,6 +78,9 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
             case 't':
                 shput(args->tracedGlobalVars, optarg, true);
                 break;
+            case 'i':
+                shput(args->tracedInstanceVars, optarg, true);
+                break;
             default:
                 fprintf(stderr, "Usage: %s [--headless] [--screenshot=PATTERN] [--screenshot-at-frame=N ...] <path to data.win or game.unx>\n", argv[0]);
                 exit(1);
@@ -98,6 +103,7 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
 static void freeCommandLineArgs(CommandLineArgs* args) {
     hmfree(args->screenshotFrames);
     shfree(args->tracedGlobalVars);
+    shfree(args->tracedInstanceVars);
 }
 
 // ===[ SCREENSHOT ]===
@@ -179,6 +185,7 @@ int main(int argc, char* argv[]) {
     // Initialize the runner
     Runner* runner = Runner_create(dataWin, vm);
     shcopyFromTo(args.tracedGlobalVars, runner->vmContext->tracedGlobalVars);
+    shcopyFromTo(args.tracedInstanceVars, runner->vmContext->tracedInstanceVars);
 
     // Init GLFW
     if (!glfwInit()) {

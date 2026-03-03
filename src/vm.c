@@ -341,6 +341,8 @@ static void resolveVariableWrite(VMContext* ctx, int16_t instanceType, uint32_t 
     }
 
     bool shouldTraceGlobal = false;
+    bool shouldTraceInstance = false;
+
     RValue* dest;
     switch (instanceType) {
         case INSTANCE_LOCAL:
@@ -356,6 +358,21 @@ static void resolveVariableWrite(VMContext* ctx, int16_t instanceType, uint32_t 
         default:
             // INSTANCE_SELF or positive instanceType (object index)
             require(ctx->selfVarCount > (uint32_t) varDef->varID);
+            if (shlen(ctx->tracedInstanceVars) != 0) {
+                GameObject* obj = &ctx->dataWin->objt.objects[ctx->currentInstance->objectIndex];
+
+                size_t objNameLength = strlen(obj->name);
+                size_t varDefLength = strlen(varDef->name);
+
+                // objNameLength + dotLength + varDefLength + nullTerminator
+                char* objNameWithVariableName = calloc(objNameLength + 1 + varDefLength + 1, sizeof(char));
+                memcpy(objNameWithVariableName, obj->name, objNameLength);
+                objNameWithVariableName[objNameLength] = '.';
+                memcpy(objNameWithVariableName + objNameLength + 1, varDef->name, varDefLength);
+
+                shouldTraceInstance = shgeti(ctx->tracedInstanceVars, obj->name) != -1 || shgeti(ctx->tracedInstanceVars, objNameWithVariableName) != -1 || shgeti(ctx->tracedInstanceVars, "*") != -1;
+                free(objNameWithVariableName);
+            }
             dest = &ctx->selfVars[varDef->varID];
             break;
     }
@@ -375,6 +392,14 @@ static void resolveVariableWrite(VMContext* ctx, int16_t instanceType, uint32_t 
     if (shouldTraceGlobal) {
         char* rvalueAsString = RValue_toString(*dest);
         printf("VM: [%s] global.%s = %s\n", ctx->currentCodeName, varDef->name, rvalueAsString);
+        free(rvalueAsString);
+    }
+
+    if (shouldTraceInstance) {
+        char* rvalueAsString = RValue_toString(*dest);
+        GameObject* obj = &ctx->dataWin->objt.objects[ctx->currentInstance->objectIndex];
+
+        printf("VM: [%s] %s.%s = %s (instanceId=%d)\n", ctx->currentCodeName, obj->name, varDef->name, rvalueAsString, ctx->currentInstance->instanceId);
         free(rvalueAsString);
     }
 }
@@ -1367,6 +1392,7 @@ void VM_free(VMContext* ctx) {
     shfree(ctx->loggedUnknownFuncs);
     shfree(ctx->loggedStubbedFuncs);
     shfree(ctx->tracedGlobalVars);
+    shfree(ctx->tracedInstanceVars);
     hmfree(ctx->varRefMap);
     hmfree(ctx->funcRefMap);
 
