@@ -742,16 +742,21 @@ static RValue builtinDsMapAdd(VMContext* ctx, RValue* args, int32_t argCount) {
     if (mapPtr == nullptr) return RValue_makeUndefined();
 
     char* key = RValue_toString(args[1]);
+
     // Only add if key doesn't exist
-    ptrdiff_t idx = shgeti(*mapPtr, key);
-    if (0 > idx) {
+    bool exists = shgeti(*mapPtr, key) != -1;
+
+    if (exists) {
+        free(key); // Key already exists, we didn't insert it
+    } else {
         RValue val = args[2];
         if (val.type == RVALUE_STRING && val.string != nullptr) {
             val = RValue_makeOwnedString(strdup(val.string));
         }
         shput(*mapPtr, key, val);
+        // The RValue is now "owned" by the map, we do not need to free it!
     }
-    free(key);
+
     return RValue_makeUndefined();
 }
 
@@ -763,17 +768,27 @@ static RValue builtinDsMapSet(VMContext* ctx, RValue* args, int32_t argCount) {
     if (mapPtr == nullptr) return RValue_makeUndefined();
 
     char* key = RValue_toString(args[1]);
-    // Free old value if exists
-    ptrdiff_t idx = shgeti(*mapPtr, key);
-    if (idx >= 0) {
-        RValue_free(&(*mapPtr)[idx].value);
+
+    ptrdiff_t existingKeyIndex = shgeti(*mapPtr, key);
+
+    if (existingKeyIndex != -1) {
+        // If it already exists, we'll get the current value and free it
+        RValue_free(&(*mapPtr)[existingKeyIndex].value);
     }
+
     RValue val = args[2];
     if (val.type == RVALUE_STRING && val.string != nullptr) {
         val = RValue_makeOwnedString(strdup(val.string));
     }
+
     shput(*mapPtr, key, val);
-    free(key);
+
+    if (existingKeyIndex != -1) {
+        // If it already existed, then shput still owns the old key
+        // So we'll need to free the created key
+        free(key);
+    }
+
     return RValue_makeUndefined();
 }
 
@@ -851,8 +866,9 @@ static RValue builtinDsMapDestroy(VMContext* ctx, RValue* args, int32_t argCount
     int32_t id = RValue_toInt32(args[0]);
     DsMapEntry** mapPtr = dsMapGet(id);
     if (mapPtr == nullptr) return RValue_makeUndefined();
-    // Free all values
+    // Free all keys and values
     for (ptrdiff_t i = 0; shlen(*mapPtr) > i; i++) {
+        free((*mapPtr)[i].key);
         RValue_free(&(*mapPtr)[i].value);
     }
     shfree(*mapPtr);
