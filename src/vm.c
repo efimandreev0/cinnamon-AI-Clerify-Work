@@ -930,6 +930,8 @@ static void handleCall(VMContext* ctx, uint32_t instr, const uint8_t* extraData)
             }
             free(display);
         }
+
+        printf("VM: [%s] Calling function \"%s(%s)\", callDepth=%d\n", ctx->currentCodeName, funcName, functionArgumentList, ctx->callDepth);
     }
 
     // Check built-in functions first
@@ -946,7 +948,7 @@ static void handleCall(VMContext* ctx, uint32_t instr, const uint8_t* extraData)
 
         if (functionIsBeingTraced) {
             char* returnValueAsString = RValue_toStringFancy(result);
-            printf("VM: [%s] Called built-in function \"%s(%s)\", return value is %s\n", ctx->currentCodeName, funcName, functionArgumentList, returnValueAsString);
+            printf("VM: [%s] Called built-in function \"%s(%s)\", return value is %s, callDepth=%d\n", ctx->currentCodeName, funcName, functionArgumentList, returnValueAsString, ctx->callDepth);
             free(returnValueAsString);
             free(functionArgumentList);
         }
@@ -985,7 +987,7 @@ static void handleCall(VMContext* ctx, uint32_t instr, const uint8_t* extraData)
 
     if (functionIsBeingTraced) {
         char* returnValueAsString = RValue_toStringFancy(result);
-        printf("VM: [%s] Called script function \"%s(%s)\", return value is %s\n", ctx->currentCodeName, funcName, functionArgumentList, returnValueAsString);
+        printf("VM: [%s] Called script function \"%s(%s)\", return value is %s, callDepth=%d\n", ctx->currentCodeName, funcName, functionArgumentList, returnValueAsString, ctx->callDepth);
         free(returnValueAsString);
         free(functionArgumentList);
     }
