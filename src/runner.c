@@ -323,7 +323,7 @@ void Runner_step(Runner* runner) {
                     if (shgeti(runner->vmContext->alarmsToBeTraced, "*") != -1 || shgeti(runner->vmContext->alarmsToBeTraced, object->name) != -1) {
                         printf("VM: Firing Alarm[%d] for %s (%d)\n", alarmIdx, object->name, inst->instanceId);
                     }
-                    
+
                     Runner_executeEvent(runner, inst, EVENT_ALARM, alarmIdx);
                 }
             }

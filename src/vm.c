@@ -316,6 +316,11 @@ static void resolveVariableWrite(VMContext* ctx, int16_t instanceType, uint32_t 
                 return;
             case INSTANCE_GLOBAL:
                 arrayMapSet(&ctx->globalArrayMap, varDef->varID, access.arrayIndex, val);
+                if (shgeti(ctx->globalVarsToBeTraced, varDef->name) != -1 || shgeti(ctx->globalVarsToBeTraced, "*") != -1) {
+                    char* rvalueAsString = RValue_toString(val);
+                    printf("VM: [%s] global.%s[%d] = %s\n", ctx->currentCodeName, varDef->name, access.arrayIndex, rvalueAsString);
+                    free(rvalueAsString);
+                }
                 return;
             case INSTANCE_SELF:
             default: {
@@ -323,6 +328,16 @@ static void resolveVariableWrite(VMContext* ctx, int16_t instanceType, uint32_t 
                 struct Instance* inst = ctx->currentInstance;
                 if (inst != nullptr) {
                     arrayMapSet(&inst->selfArrayMap, varDef->varID, access.arrayIndex, val);
+                    if (shlen(ctx->instanceVarsToBeTraced) != 0) {
+                        GameObject* obj = &ctx->dataWin->objt.objects[inst->objectIndex];
+                        char objNameWithVariableName[strlen(obj->name) + 1 + strlen(varDef->name) + 1];
+                        snprintf(objNameWithVariableName, sizeof(objNameWithVariableName), "%s.%s", obj->name, varDef->name);
+                        if (shgeti(ctx->instanceVarsToBeTraced, obj->name) != -1 || shgeti(ctx->instanceVarsToBeTraced, objNameWithVariableName) != -1 || shgeti(ctx->instanceVarsToBeTraced, "*") != -1) {
+                            char* rvalueAsString = RValue_toString(val);
+                            printf("VM: [%s] %s.%s[%d] = %s (instanceId=%d)\n", ctx->currentCodeName, obj->name, varDef->name, access.arrayIndex, rvalueAsString, inst->instanceId);
+                            free(rvalueAsString);
+                        }
+                    }
                     return;
                 }
                 fprintf(stderr, "VM: Array write on self var '%s' but no current instance (instanceType=%d)\n", varDef->name, instanceType);
@@ -549,12 +564,27 @@ static void handlePop(VMContext* ctx, uint32_t instr, const uint8_t* extraData) 
                     break;
                 case INSTANCE_GLOBAL:
                     arrayMapSet(&ctx->globalArrayMap, varDef->varID, arrayIndex, val);
+                    if (shgeti(ctx->globalVarsToBeTraced, varDef->name) != -1 || shgeti(ctx->globalVarsToBeTraced, "*") != -1) {
+                        char* rvalueAsString = RValue_toString(val);
+                        printf("VM: [%s] global.%s[%d] = %s\n", ctx->currentCodeName, varDef->name, arrayIndex, rvalueAsString);
+                        free(rvalueAsString);
+                    }
                     break;
                 case INSTANCE_SELF:
                 default: {
                     struct Instance* inst = (struct Instance*) ctx->currentInstance;
                     if (inst != nullptr) {
                         arrayMapSet(&inst->selfArrayMap, varDef->varID, arrayIndex, val);
+                        if (shlen(ctx->instanceVarsToBeTraced) != 0) {
+                            GameObject* obj = &ctx->dataWin->objt.objects[inst->objectIndex];
+                            char objNameWithVariableName[strlen(obj->name) + 1 + strlen(varDef->name) + 1];
+                            snprintf(objNameWithVariableName, sizeof(objNameWithVariableName), "%s.%s", obj->name, varDef->name);
+                            if (shgeti(ctx->instanceVarsToBeTraced, obj->name) != -1 || shgeti(ctx->instanceVarsToBeTraced, objNameWithVariableName) != -1 || shgeti(ctx->instanceVarsToBeTraced, "*") != -1) {
+                                char* rvalueAsString = RValue_toString(val);
+                                printf("VM: [%s] %s.%s[%d] = %s (instanceId=%d)\n", ctx->currentCodeName, obj->name, varDef->name, arrayIndex, rvalueAsString, inst->instanceId);
+                                free(rvalueAsString);
+                            }
+                        }
                     }
                     break;
                 }
