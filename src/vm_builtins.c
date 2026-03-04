@@ -345,6 +345,24 @@ void VMBuiltins_setVariable(VMContext* ctx, const char* name, RValue val, int32_
         }
         return;
     }
+    if (strcmp(name, "view_yview") == 0) {
+        if (arrayIndex >= 0 && 8 > arrayIndex) {
+            runner->currentRoom->views[arrayIndex].viewY = RValue_toInt32(val);
+        }
+        return;
+    }
+    if (strcmp(name, "view_wview") == 0) {
+        if (arrayIndex >= 0 && 8 > arrayIndex) {
+            runner->currentRoom->views[arrayIndex].viewWidth = RValue_toInt32(val);
+        }
+        return;
+    }
+    if (strcmp(name, "view_hview") == 0) {
+        if (arrayIndex >= 0 && 8 > arrayIndex) {
+            runner->currentRoom->views[arrayIndex].viewHeight = RValue_toInt32(val);
+        }
+        return;
+    }
 
     // Background properties
     if (strcmp(name, "background_visible") == 0) {
