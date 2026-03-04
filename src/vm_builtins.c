@@ -1613,14 +1613,15 @@ static RValue builtin_drawBackgroundPartExt(VMContext* ctx, RValue* args, [[mayb
     int32_t height = RValue_toInt32(args[4]);
     float x = (float) RValue_toReal(args[5]);
     float y = (float) RValue_toReal(args[6]);
-    // xscale (args[7]) and yscale (args[8]) are unused for drawSpritePart
+    float xscale = (float) RValue_toReal(args[7]);
+    float yscale = (float) RValue_toReal(args[8]);
     uint32_t color = (uint32_t) RValue_toInt32(args[9]);
     float alpha = (float) RValue_toReal(args[10]);
 
     int32_t tpagIndex = Renderer_resolveBackgroundTPAGIndex(runner->dataWin, bgIndex);
     if (0 > tpagIndex) return RValue_makeUndefined();
 
-    runner->renderer->vtable->drawSpritePart(runner->renderer, tpagIndex, left, top, width, height, x, y, color, alpha);
+    runner->renderer->vtable->drawSpritePart(runner->renderer, tpagIndex, left, top, width, height, x, y, xscale, yscale, color, alpha);
     return RValue_makeUndefined();
 }
 
@@ -1961,6 +1962,45 @@ static RValue builtinActionSetAlarm(VMContext* ctx, [[maybe_unused]] RValue* arg
     return RValue_makeUndefined();
 }
 
+// ===[ Tile Layer Functions ]===
+
+static TileLayerState* getOrCreateTileLayer(Runner* runner, int32_t depth) {
+    ptrdiff_t idx = hmgeti(runner->tileLayerMap, depth);
+    if (0 > idx) {
+        TileLayerState defaultVal = { .visible = true, .offsetX = 0.0f, .offsetY = 0.0f };
+        hmput(runner->tileLayerMap, depth, defaultVal);
+        idx = hmgeti(runner->tileLayerMap, depth);
+    }
+    return &runner->tileLayerMap[idx].value;
+}
+
+static RValue builtinTileLayerHide([[maybe_unused]] VMContext* ctx, RValue* args, [[maybe_unused]] int32_t argCount) {
+    Runner* runner = (Runner*) ctx->runner;
+    int32_t depth = RValue_toInt32(args[0]);
+    TileLayerState* layer = getOrCreateTileLayer(runner, depth);
+    layer->visible = false;
+    return RValue_makeUndefined();
+}
+
+static RValue builtinTileLayerShow([[maybe_unused]] VMContext* ctx, RValue* args, [[maybe_unused]] int32_t argCount) {
+    Runner* runner = (Runner*) ctx->runner;
+    int32_t depth = RValue_toInt32(args[0]);
+    TileLayerState* layer = getOrCreateTileLayer(runner, depth);
+    layer->visible = true;
+    return RValue_makeUndefined();
+}
+
+static RValue builtinTileLayerShift([[maybe_unused]] VMContext* ctx, RValue* args, [[maybe_unused]] int32_t argCount) {
+    Runner* runner = (Runner*) ctx->runner;
+    int32_t depth = RValue_toInt32(args[0]);
+    float dx = (float) RValue_toReal(args[1]);
+    float dy = (float) RValue_toReal(args[2]);
+    TileLayerState* layer = getOrCreateTileLayer(runner, depth);
+    layer->offsetX += dx;
+    layer->offsetY += dy;
+    return RValue_makeUndefined();
+}
+
 // ===[ REGISTRATION ]===
 
 void VMBuiltins_registerAll(void) {
@@ -2243,6 +2283,11 @@ void VMBuiltins_registerAll(void) {
     registerBuiltin("collision_line", builtin_collision_line);
     registerBuiltin("collision_point", builtinCollisionPoint);
     registerBuiltin("instance_position", builtinInstancePosition);
+
+    // Tile layers
+    registerBuiltin("tile_layer_hide", builtinTileLayerHide);
+    registerBuiltin("tile_layer_show", builtinTileLayerShow);
+    registerBuiltin("tile_layer_shift", builtinTileLayerShift);
 
     // Misc
     registerBuiltin("get_timer", builtin_get_timer);

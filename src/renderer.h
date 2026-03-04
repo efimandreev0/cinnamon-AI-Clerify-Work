@@ -16,7 +16,7 @@ typedef struct {
     void (*beginFrame)(Renderer* renderer, int32_t viewX, int32_t viewY, int32_t viewW, int32_t viewH, int32_t windowW, int32_t windowH);
     void (*endFrame)(Renderer* renderer);
     void (*drawSprite)(Renderer* renderer, int32_t tpagIndex, float x, float y, float originX, float originY, float xscale, float yscale, float angleDeg, uint32_t color, float alpha);
-    void (*drawSpritePart)(Renderer* renderer, int32_t tpagIndex, int32_t srcOffX, int32_t srcOffY, int32_t srcW, int32_t srcH, float x, float y, uint32_t color, float alpha);
+    void (*drawSpritePart)(Renderer* renderer, int32_t tpagIndex, int32_t srcOffX, int32_t srcOffY, int32_t srcW, int32_t srcH, float x, float y, float xscale, float yscale, uint32_t color, float alpha);
     void (*drawRectangle)(Renderer* renderer, float x1, float y1, float x2, float y2, uint32_t color, float alpha, bool outline);
     void (*drawText)(Renderer* renderer, const char* text, float x, float y, float xscale, float yscale, float angleDeg);
     void (*flush)(Renderer* renderer);
@@ -103,7 +103,7 @@ static void Renderer_drawSpritePart(Renderer* renderer, int32_t spriteIndex, int
     if (height > tpag->sourceHeight - top) height = tpag->sourceHeight - top;
     if (0 >= width || 0 >= height) return;
 
-    renderer->vtable->drawSpritePart(renderer, tpagIndex, left, top, width, height, x, y, 0xFFFFFF, renderer->drawAlpha);
+    renderer->vtable->drawSpritePart(renderer, tpagIndex, left, top, width, height, x, y, 1.0f, 1.0f, 0xFFFFFF, renderer->drawAlpha);
 }
 
 // Resolves a BGND index to a TPAG index via Background.textureOffset -> DataWin_resolveTPAG()
@@ -170,4 +170,17 @@ static void Renderer_drawSelf(Renderer* renderer, Instance* instance) {
         instance->imageBlend,
         (float) instance->imageAlpha
     );
+}
+
+// Draws a room tile with layer shift offset applied
+static void Renderer_drawTile(Renderer* renderer, RoomTile* tile, float offsetX, float offsetY) {
+    int32_t tpagIndex = Renderer_resolveBackgroundTPAGIndex(renderer->dataWin, tile->backgroundDefinition);
+    if (0 > tpagIndex) return;
+
+    // Extract alpha from high byte, default to 1.0 if alpha byte is 0
+    uint8_t alphaByte = (tile->color >> 24) & 0xFF;
+    float alpha = (alphaByte == 0) ? 1.0f : (float) alphaByte / 255.0f;
+    uint32_t bgr = tile->color & 0x00FFFFFF;
+
+    renderer->vtable->drawSpritePart(renderer, tpagIndex, tile->sourceX, tile->sourceY, (int32_t) tile->width, (int32_t) tile->height, (float) tile->x + offsetX, (float) tile->y + offsetY, tile->scaleX, tile->scaleY, bgr, alpha);
 }

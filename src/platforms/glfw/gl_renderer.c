@@ -373,7 +373,7 @@ static void glDrawSprite(Renderer* renderer, int32_t tpagIndex, float x, float y
     gl->quadCount++;
 }
 
-static void glDrawSpritePart(Renderer* renderer, int32_t tpagIndex, int32_t srcOffX, int32_t srcOffY, int32_t srcW, int32_t srcH, float x, float y, uint32_t color, float alpha) {
+static void glDrawSpritePart(Renderer* renderer, int32_t tpagIndex, int32_t srcOffX, int32_t srcOffY, int32_t srcW, int32_t srcH, float x, float y, float xscale, float yscale, uint32_t color, float alpha) {
     GLRenderer* gl = (GLRenderer*) renderer;
     DataWin* dw = renderer->dataWin;
 
@@ -402,8 +402,8 @@ static void glDrawSpritePart(Renderer* renderer, int32_t tpagIndex, int32_t srcO
     // Quad corners (no origin offset, no transform - draw_sprite_part ignores sprite origin)
     float x0 = x;
     float y0 = y;
-    float x1 = x + (float) srcW;
-    float y1 = y + (float) srcH;
+    float x1 = x + (float) srcW * xscale;
+    float y1 = y + (float) srcH * yscale;
 
     // Convert BGR color to RGB floats
     float r = (float) BGR_R(color) / 255.0f;

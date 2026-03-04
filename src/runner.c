@@ -265,6 +265,29 @@ void Runner_drawBackgrounds(Runner* runner, bool foreground) {
 
 // ===[ Draw ]===
 
+typedef enum { DRAWABLE_TILE, DRAWABLE_INSTANCE } DrawableType;
+
+typedef struct {
+    DrawableType type;
+    int32_t depth;
+    union {
+        Instance* instance;
+        int32_t tileIndex; // index into currentRoom->tiles
+    };
+} Drawable;
+
+static int compareDrawableDepth(const void* a, const void* b) {
+    const Drawable* da = (const Drawable*) a;
+    const Drawable* db = (const Drawable*) b;
+    // Higher depth draws first (behind), lower depth draws last (in front)
+    if (da->depth > db->depth) return -1;
+    if (db->depth > da->depth) return 1;
+    // At same depth, tiles before instances (tiles are background)
+    if (da->type < db->type) return -1;
+    if (db->type < da->type) return 1;
+    return 0;
+}
+
 static int compareInstanceDepth(const void* a, const void* b) {
     Instance* instA = *(Instance**) a;
     Instance* instB = *(Instance**) b;
@@ -281,7 +304,7 @@ static void fireDrawSubtype(Runner* runner, Instance** drawList, int32_t drawCou
 }
 
 void Runner_draw(Runner* runner) {
-    // Collect active + visible instances
+    // Collect active + visible instances for event dispatch
     Instance** drawList = nullptr;
     int32_t count = (int32_t) arrlen(runner->instances);
     repeat(count, i) {
@@ -304,16 +327,59 @@ void Runner_draw(Runner* runner) {
     fireDrawSubtype(runner, drawList, drawCount, DRAW_PRE);
     fireDrawSubtype(runner, drawList, drawCount, DRAW_BEGIN);
 
-    // DRAW_NORMAL: instances with Draw events execute them, others get default sprite draw
+    // DRAW_NORMAL: build a unified drawable list of tiles + instances, sorted by depth
+    Drawable* drawables = nullptr;
+
+    // Add visible instances
     repeat(drawCount, i) {
-        Instance* inst = drawList[i];
-        int32_t codeId = findEventCodeIdAndOwner(runner->dataWin, inst->objectIndex, EVENT_DRAW, DRAW_NORMAL, nullptr);
-        if (codeId >= 0) {
-            Runner_executeEvent(runner, inst, EVENT_DRAW, DRAW_NORMAL);
-        } else if (runner->renderer != nullptr) {
-            Renderer_drawSelf(runner->renderer, inst);
+        Drawable d = { .type = DRAWABLE_INSTANCE, .depth = drawList[i]->depth, .instance = drawList[i] };
+        arrput(drawables, d);
+    }
+
+    // Add tiles (skip hidden layers)
+    Room* room = runner->currentRoom;
+    repeat(room->tileCount, i) {
+        RoomTile* tile = &room->tiles[i];
+        // Check if this tile's layer is hidden
+        ptrdiff_t layerIdx = hmgeti(runner->tileLayerMap, tile->tileDepth);
+        if (layerIdx >= 0 && !runner->tileLayerMap[layerIdx].value.visible) continue;
+
+        Drawable d = { .type = DRAWABLE_TILE, .depth = tile->tileDepth, .tileIndex = (int32_t) i };
+        arrput(drawables, d);
+    }
+
+    // Sort all drawables by depth
+    int32_t drawableCount = (int32_t) arrlen(drawables);
+    if (drawableCount > 1) {
+        qsort(drawables, drawableCount, sizeof(Drawable), compareDrawableDepth);
+    }
+
+    // Draw interleaved tiles and instances
+    repeat(drawableCount, i) {
+        Drawable* d = &drawables[i];
+        if (d->type == DRAWABLE_TILE) {
+            if (runner->renderer != nullptr) {
+                RoomTile* tile = &room->tiles[d->tileIndex];
+                float offsetX = 0.0f, offsetY = 0.0f;
+                ptrdiff_t layerIdx = hmgeti(runner->tileLayerMap, tile->tileDepth);
+                if (layerIdx >= 0) {
+                    offsetX = runner->tileLayerMap[layerIdx].value.offsetX;
+                    offsetY = runner->tileLayerMap[layerIdx].value.offsetY;
+                }
+                Renderer_drawTile(runner->renderer, tile, offsetX, offsetY);
+            }
+        } else {
+            Instance* inst = d->instance;
+            int32_t codeId = findEventCodeIdAndOwner(runner->dataWin, inst->objectIndex, EVENT_DRAW, DRAW_NORMAL, nullptr);
+            if (codeId >= 0) {
+                Runner_executeEvent(runner, inst, EVENT_DRAW, DRAW_NORMAL);
+            } else if (runner->renderer != nullptr) {
+                Renderer_drawSelf(runner->renderer, inst);
+            }
         }
     }
+
+    arrfree(drawables);
 
     fireDrawSubtype(runner, drawList, drawCount, DRAW_END);
 
@@ -365,6 +431,10 @@ static void initRoom(Runner* runner, int32_t roomIndex) {
     Room* room = &dataWin->room.rooms[roomIndex];
     runner->currentRoom = room;
     runner->currentRoomIndex = roomIndex;
+
+    // Reset tile layer state for the new room
+    hmfree(runner->tileLayerMap);
+    runner->tileLayerMap = nullptr;
 
     // Copy room background definitions into mutable runtime state
     runner->backgroundColor = room->backgroundColor;
@@ -1115,6 +1185,7 @@ void Runner_free(Runner* runner) {
     }
     arrfree(runner->instances);
 
+    hmfree(runner->tileLayerMap);
     RunnerKeyboard_free(runner->keyboard);
     free(runner);
 }

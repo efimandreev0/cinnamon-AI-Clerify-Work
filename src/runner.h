@@ -49,6 +49,12 @@ typedef struct {
     bool stretch;
 } RuntimeBackground;
 
+typedef struct {
+    bool visible;
+    float offsetX;
+    float offsetY;
+} TileLayerState;
+
 typedef struct Runner {
     DataWin* dataWin;
     VMContext* vmContext;
@@ -66,6 +72,7 @@ typedef struct Runner {
     uint32_t backgroundColor;      // runtime-mutable (BGR format)
     bool drawBackgroundColor;
     bool shouldExit;
+    struct { int32_t key; TileLayerState value; }* tileLayerMap; // stb_ds hashmap: depth -> tile layer state
 } Runner;
 
 Runner* Runner_create(DataWin* dataWin, VMContext* vm);
