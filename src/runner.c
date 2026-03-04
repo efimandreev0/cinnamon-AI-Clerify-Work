@@ -91,7 +91,18 @@ static const char* getEventName(int32_t eventType, int32_t eventSubtype) {
                 case STEP_END:    return "EndStep";
                 default:          return "Step";
             }
-        case EVENT_DRAW: return "Draw";
+        case EVENT_DRAW:
+            switch (eventSubtype) {
+                case DRAW_NORMAL:    return "Draw";
+                case DRAW_GUI:       return "DrawGUI";
+                case DRAW_BEGIN:     return "DrawBegin";
+                case DRAW_END:       return "DrawEnd";
+                case DRAW_GUI_BEGIN: return "DrawGUIBegin";
+                case DRAW_GUI_END:   return "DrawGUIEnd";
+                case DRAW_PRE:       return "DrawPre";
+                case DRAW_POST:      return "DrawPost";
+                default:             return "Draw";
+            }
         case EVENT_OTHER:
             switch (eventSubtype) {
                 case OTHER_GAME_START: return "GameStart";
@@ -151,6 +162,53 @@ void Runner_executeEventForAll(Runner* runner, int32_t eventType, int32_t eventS
             Runner_executeEvent(runner, inst, eventType, eventSubtype);
         }
     }
+}
+
+// ===[ Draw ]===
+
+static int compareInstanceDepth(const void* a, const void* b) {
+    Instance* instA = *(Instance**) a;
+    Instance* instB = *(Instance**) b;
+    // Higher depth draws first (behind), lower depth draws last (in front)
+    if (instA->depth > instB->depth) return -1;
+    if (instB->depth > instA->depth) return 1;
+    return 0;
+}
+
+static void fireDrawSubtype(Runner* runner, Instance** drawList, int32_t drawCount, int32_t subtype) {
+    repeat(drawCount, i) {
+        Runner_executeEvent(runner, drawList[i], EVENT_DRAW, subtype);
+    }
+}
+
+void Runner_draw(Runner* runner) {
+    // Collect active + visible instances
+    Instance** drawList = nullptr;
+    int32_t count = (int32_t) arrlen(runner->instances);
+    repeat(count, i) {
+        Instance* inst = runner->instances[i];
+        if (inst != nullptr && inst->active && inst->visible) {
+            arrput(drawList, inst);
+        }
+    }
+
+    // Sort by depth descending (higher depth first)
+    int32_t drawCount = (int32_t) arrlen(drawList);
+    if (drawCount > 1) {
+        qsort(drawList, drawCount, sizeof(Instance*), compareInstanceDepth);
+    }
+
+    // Fire draw subtypes in correct GameMaker order
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_PRE);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_BEGIN);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_NORMAL);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_END);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_POST);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_GUI_BEGIN);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_GUI);
+    fireDrawSubtype(runner, drawList, drawCount, DRAW_GUI_END);
+
+    arrfree(drawList);
 }
 
 // ===[ Instance Creation Helper ]===

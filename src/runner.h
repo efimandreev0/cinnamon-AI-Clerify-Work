@@ -17,6 +17,16 @@
 #define STEP_BEGIN  1
 #define STEP_END    2
 
+// ===[ Draw Sub-event Constants ]===
+#define DRAW_NORMAL    0
+#define DRAW_GUI       64
+#define DRAW_BEGIN     72
+#define DRAW_END       73
+#define DRAW_GUI_BEGIN 74
+#define DRAW_GUI_END   75
+#define DRAW_PRE       76
+#define DRAW_POST      77
+
 // ===[ Other Sub-event Constants ]===
 #define OTHER_GAME_START 2
 #define OTHER_ROOM_START 4
@@ -41,6 +51,7 @@ void Runner_step(Runner* runner);
 void Runner_executeEvent(Runner* runner, Instance* instance, int32_t eventType, int32_t eventSubtype);
 void Runner_executeEventFromObject(Runner* runner, Instance* instance, int32_t startObjectIndex, int32_t eventType, int32_t eventSubtype);
 void Runner_executeEventForAll(Runner* runner, int32_t eventType, int32_t eventSubtype);
+void Runner_draw(Runner* runner);
 Instance* Runner_createInstance(Runner* runner, double x, double y, int32_t objectIndex);
 void Runner_destroyInstance(Runner* runner, Instance* inst);
 void Runner_cleanupDestroyedInstances(Runner* runner);

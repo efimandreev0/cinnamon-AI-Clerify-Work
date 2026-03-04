@@ -303,6 +303,9 @@ int main(int argc, char* argv[]) {
         glClearColor(rInt / 255.0f, gInt / 255.0f, bInt / 255.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Fire Draw events for all visible instances, sorted by depth
+        Runner_draw(runner);
+
         // Capture screenshot if this frame matches a requested frame
         bool shouldScreenshot = hmget(args.screenshotFrames, runner->frameCount);
 
