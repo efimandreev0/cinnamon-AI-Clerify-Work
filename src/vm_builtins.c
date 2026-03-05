@@ -1383,6 +1383,23 @@ static RValue builtinInstanceNumber(VMContext* ctx, RValue* args, int32_t argCou
     return RValue_makeReal((double) count);
 }
 
+static RValue builtinInstanceFind(VMContext* ctx, RValue* args, int32_t argCount) {
+    if (2 > argCount) return RValue_makeReal(-4.0); // noone
+    Runner* runner = (Runner*) ctx->runner;
+    int32_t objectIndex = RValue_toInt32(args[0]);
+    int32_t n = RValue_toInt32(args[1]);
+    int32_t count = 0;
+    int32_t instanceCount = (int32_t) arrlen(runner->instances);
+    repeat(instanceCount, i) {
+        Instance* inst = runner->instances[i];
+        if (inst->active && VM_isObjectOrDescendant(ctx->dataWin, inst->objectIndex, objectIndex)) {
+            if (count == n) return RValue_makeReal((double) inst->instanceId);
+            count++;
+        }
+    }
+    return RValue_makeReal(-4.0); // noone
+}
+
 static RValue builtinInstanceExists(VMContext* ctx, RValue* args, int32_t argCount) {
     if (1 > argCount) return RValue_makeBool(false);
     Runner* runner = (Runner*) ctx->runner;
@@ -2412,6 +2429,7 @@ void VMBuiltins_registerAll(void) {
     // Instance
     registerBuiltin("instance_exists", builtinInstanceExists);
     registerBuiltin("instance_number", builtinInstanceNumber);
+    registerBuiltin("instance_find", builtinInstanceFind);
     registerBuiltin("instance_destroy", builtinInstanceDestroy);
     registerBuiltin("instance_create", builtinInstanceCreate);
     registerBuiltin("action_kill_object", builtinActionKillObject);
