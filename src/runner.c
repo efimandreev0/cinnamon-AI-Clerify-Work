@@ -369,6 +369,31 @@ void Runner_draw(Runner* runner) {
                     offsetX = runner->tileLayerMap[layerIdx].value.offsetX;
                     offsetY = runner->tileLayerMap[layerIdx].value.offsetY;
                 }
+
+                // Trace tile drawing if requested
+                if (shlen(runner->vmContext->tilesToBeTraced) > 0) {
+                    DataWin* dataWin = runner->dataWin;
+                    const char* bgName = (tile->backgroundDefinition >= 0 && dataWin->bgnd.count > (uint32_t) tile->backgroundDefinition) ? dataWin->bgnd.backgrounds[tile->backgroundDefinition].name : "<none>";
+                    const char* roomName = room->name;
+
+                    bool shouldTrace = shgeti(runner->vmContext->tilesToBeTraced, "*") != -1 || shgeti(runner->vmContext->tilesToBeTraced, bgName) != -1 || shgeti(runner->vmContext->tilesToBeTraced, roomName) != -1;
+
+                    if (shouldTrace) {
+                        int32_t tpagIndex = Renderer_resolveBackgroundTPAGIndex(dataWin, tile->backgroundDefinition);
+                        if (tpagIndex >= 0) {
+                            TexturePageItem* tpag = &dataWin->tpag.items[tpagIndex];
+                            fprintf(stderr, "Runner: [%s] Drawing tile #%d bg=%s(%d) tpag(srcX=%d srcY=%d srcW=%d srcH=%d tgtX=%d tgtY=%d bndW=%d bndH=%d page=%d) tile(srcX=%d srcY=%d w=%u h=%u) at pos=(%d,%d) depth=%d\n", roomName, d->tileIndex, bgName, tile->backgroundDefinition, tpag->sourceX, tpag->sourceY, tpag->sourceWidth, tpag->sourceHeight, tpag->targetX, tpag->targetY, tpag->boundingWidth, tpag->boundingHeight, tpag->texturePageId, tile->sourceX, tile->sourceY, tile->width, tile->height, tile->x, tile->y, tile->tileDepth);
+
+                            // Warn if tile source rect exceeds TPAG content bounds
+                            if ((uint32_t) (tile->sourceX + tile->width) > (uint32_t) tpag->sourceWidth || (uint32_t) (tile->sourceY + tile->height) > (uint32_t) tpag->sourceHeight) {
+                                fprintf(stderr, "Runner: [%s] WARNING: Tile #%d source rect (%d,%d %ux%u) exceeds TPAG content bounds (%dx%d)\n", roomName, d->tileIndex, tile->sourceX, tile->sourceY, tile->width, tile->height, tpag->sourceWidth, tpag->sourceHeight);
+                            }
+                        } else {
+                            fprintf(stderr, "Runner: [%s] Drawing tile #%d bg=%s(%d) tpag=UNRESOLVED tile(srcX=%d srcY=%d w=%u h=%u) at pos=(%d,%d) depth=%d\n", roomName, d->tileIndex, bgName, tile->backgroundDefinition, tile->sourceX, tile->sourceY, tile->width, tile->height, tile->x, tile->y, tile->tileDepth);
+                        }
+                    }
+                }
+
                 Renderer_drawTile(runner->renderer, tile, offsetX, offsetY);
             }
         } else {

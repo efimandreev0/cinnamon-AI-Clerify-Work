@@ -42,6 +42,7 @@ typedef struct {
     StringBooleanEntry* opcodesToBeTraced;
     StringBooleanEntry* stackToBeTraced;
     StringBooleanEntry* disassemble;
+    StringBooleanEntry* tilesToBeTraced;
     bool headless;
     bool traceFrames;
     bool printRooms;
@@ -72,6 +73,7 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
         {"trace-instance-lifecycles", required_argument,         nullptr, 'l'},
         {"trace-events", required_argument,         nullptr, 'e'},
         {"trace-event-inherited", no_argument, nullptr, 'E'},
+        {"trace-tiles", required_argument, nullptr, 'T'},
         {"trace-opcodes", required_argument,       nullptr, 'o'},
         {"trace-stack", required_argument,         nullptr, 'S'},
         {"trace-frames", no_argument, nullptr, 'k'},
@@ -194,6 +196,9 @@ static void parseCommandLineArgs(CommandLineArgs* args, int argc, char* argv[]) 
             case 'A':
                 shput(args->disassemble, optarg, true);
                 break;
+            case 'T':
+                shput(args->tilesToBeTraced, optarg, true);
+                break;
             case 'E':
                 args->traceEventInherited = true;
                 break;
@@ -252,6 +257,7 @@ static void freeCommandLineArgs(CommandLineArgs* args) {
     shfree(args->opcodesToBeTraced);
     shfree(args->stackToBeTraced);
     shfree(args->disassemble);
+    shfree(args->tilesToBeTraced);
 }
 
 // ===[ SCREENSHOT ]===
@@ -437,6 +443,7 @@ int main(int argc, char* argv[]) {
     shcopyFromTo(args.eventsToBeTraced, runner->vmContext->eventsToBeTraced);
     shcopyFromTo(args.opcodesToBeTraced, runner->vmContext->opcodesToBeTraced);
     shcopyFromTo(args.stackToBeTraced, runner->vmContext->stackToBeTraced);
+    shcopyFromTo(args.tilesToBeTraced, runner->vmContext->tilesToBeTraced);
     runner->vmContext->traceEventInherited = args.traceEventInherited;
 
     // Init GLFW
