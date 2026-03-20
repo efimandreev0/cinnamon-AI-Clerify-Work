@@ -1,0 +1,1 @@
+cmake --build build-n3ds

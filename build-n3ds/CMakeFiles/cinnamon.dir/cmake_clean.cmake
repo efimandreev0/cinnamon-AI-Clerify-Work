@@ -1,0 +1,35 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/cinnamon.dir/src/binary_reader.o"
+  "CMakeFiles/cinnamon.dir/src/binary_reader.o.d"
+  "CMakeFiles/cinnamon.dir/src/data_win.o"
+  "CMakeFiles/cinnamon.dir/src/data_win.o.d"
+  "CMakeFiles/cinnamon.dir/src/data_win_print.o"
+  "CMakeFiles/cinnamon.dir/src/data_win_print.o.d"
+  "CMakeFiles/cinnamon.dir/src/ini.o"
+  "CMakeFiles/cinnamon.dir/src/ini.o.d"
+  "CMakeFiles/cinnamon.dir/src/input_recording.o"
+  "CMakeFiles/cinnamon.dir/src/input_recording.o.d"
+  "CMakeFiles/cinnamon.dir/src/instance.o"
+  "CMakeFiles/cinnamon.dir/src/instance.o.d"
+  "CMakeFiles/cinnamon.dir/src/json_reader.o"
+  "CMakeFiles/cinnamon.dir/src/json_reader.o.d"
+  "CMakeFiles/cinnamon.dir/src/json_writer.o"
+  "CMakeFiles/cinnamon.dir/src/json_writer.o.d"
+  "CMakeFiles/cinnamon.dir/src/noop_file_system.o"
+  "CMakeFiles/cinnamon.dir/src/noop_file_system.o.d"
+  "CMakeFiles/cinnamon.dir/src/runner.o"
+  "CMakeFiles/cinnamon.dir/src/runner.o.d"
+  "CMakeFiles/cinnamon.dir/src/runner_keyboard.o"
+  "CMakeFiles/cinnamon.dir/src/runner_keyboard.o.d"
+  "CMakeFiles/cinnamon.dir/src/vm.o"
+  "CMakeFiles/cinnamon.dir/src/vm.o.d"
+  "CMakeFiles/cinnamon.dir/src/vm_builtins.o"
+  "CMakeFiles/cinnamon.dir/src/vm_builtins.o.d"
+  "cinnamon.elf"
+  "cinnamon.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C)
+  include(CMakeFiles/cinnamon.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
