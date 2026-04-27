@@ -18,7 +18,10 @@ SOURCES     := src src/wiiu
 INCLUDES    := src src/wiiu
 RESOURCES	:= resources/wiiu
 OUTPUT      := output/wiiu
+
+# I want to rename this to build/wiiu but I can't because when I do it skips straight to linking and since nothing compiled, it dies.
 BUILD       := build-wiiu
+
 CONTENT_DIR := $(TOPDIR)/$(OUTPUT)/content
 
 export APP_NAME        := Undertale
