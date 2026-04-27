@@ -14,18 +14,22 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITPRO)/wut/share/wut_rules
 
 TARGET      := undertale
-BUILD       := build-wiiu
 SOURCES     := src src/wiiu
 INCLUDES    := src src/wiiu
-OUTPUT      := output-wiiu
+RESOURCES	:= resources/wiiu
+OUTPUT      := output/wiiu
+
+# I want to rename this to build/wiiu but I can't because when I do it skips straight to linking and since nothing compiled, it dies.
+BUILD       := build-wiiu
+
 CONTENT_DIR := $(TOPDIR)/$(OUTPUT)/content
 
 export APP_NAME        := Undertale
 export APP_SHORTNAME   := Undertale
 export APP_AUTHOR      := Grayforz2468
-export APP_ICON        := $(TOPDIR)/resources/wiiu/icon.png
-export APP_TV_IMAGE    := $(TOPDIR)/resources/wiiu/tv.png
-export APP_DRC_IMAGE   := $(TOPDIR)/resources/wiiu/drc.png
+export APP_ICON        := $(TOPDIR)/$(RESOURCES)/meta/icon.png
+export APP_TV_IMAGE    := $(TOPDIR)/$(RESOURCES)/meta/tv.png
+export APP_DRC_IMAGE   := $(TOPDIR)/$(RESOURCES)/meta/drc.png
 export APP_CONTENT     := $(CONTENT_DIR)
 
 ifeq ($(OS),Windows_NT)
@@ -34,7 +38,7 @@ else
 CAFEGLSL        ?= $(TOPDIR)/tools/CafeGLSL/glslcompiler.elf
 endif
 
-WIIU_SHADER_DIR := $(TOPDIR)/resources/wiiu/shaders
+WIIU_SHADER_DIR := $(TOPDIR)/$(RESOURCES)/shaders
 WIIU_SHADERS    := $(WIIU_SHADER_DIR)/textured_quad.gsh $(WIIU_SHADER_DIR)/pos_col.gsh
 WIIU_SHADER_HDR := $(TOPDIR)/src/wiiu/textured_quad_gsh.h $(TOPDIR)/src/wiiu/pos_col_gsh.h
 WIIU_SHADER_PREBUILT := $(WIIU_SHADERS) $(WIIU_SHADER_HDR)
