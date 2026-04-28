@@ -45,39 +45,43 @@ set(COMMON_SOURCES
     src/vm_builtins.h
 )
 
-set(WIIU_SOURCES
-    src/wiiu/wiiu_audio_system.c
-    src/wiiu/wiiu_renderer.c
-    src/wiiu/main.c
-    src/wiiu/textured_quad_gsh.h
-    src/wiiu/wiiu_file_system.c
-    src/wiiu/wiiu_audio_system.h
-    src/wiiu/pos_col_gsh.h
-    src/wiiu/wiiu_renderer.h
-    src/wiiu/stb_impl.c
-    src/wiiu/wiiu_file_system.h
-)
-
 include_directories(vendor)
 
 find_package(SDL2 REQUIRED)
 
-add_executable(
-    Cinnamon 
-    ${COMMON_SOURCES} 
-    ${WIIU_SOURCES}
-)
+if(CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
+    set(WIIU_SOURCES
+        src/wiiu/wiiu_audio_system.c
+        src/wiiu/wiiu_renderer.c
+        src/wiiu/main.c
+        src/wiiu/textured_quad_gsh.h
+        src/wiiu/wiiu_file_system.c
+        src/wiiu/wiiu_audio_system.h
+        src/wiiu/pos_col_gsh.h
+        src/wiiu/wiiu_renderer.h
+        src/wiiu/stb_impl.c
+        src/wiiu/wiiu_file_system.h
+    )
 
-target_link_libraries(Cinnamon PRIVATE SDL2::SDL2)
+    add_executable(
+        Cinnamon 
+        ${COMMON_SOURCES} 
+        ${WIIU_SOURCES}
+    )
 
-wut_create_rpx(Cinnamon)
+    target_link_libraries(Cinnamon PRIVATE SDL2::SDL2)
 
-wut_create_wuhb(Cinnamon 
-    NAME "UNDERTALE"
-    SHORTNAME "UNDERTALE"
-    AUTHOR "Toby Fox, Project Sunshine"
-    DRCSPLASH resources/wiiu/meta/drc.png
-    ICON resources/wiiu/meta/icon.png
-    TVSPLASH resources/wiiu/meta/tv.png
-    CONTENT resources/wiiu/content
-)
+    wut_create_rpx(Cinnamon)
+
+    wut_create_wuhb(Cinnamon 
+        NAME "UNDERTALE"
+        SHORTNAME "UNDERTALE"
+        AUTHOR "Toby Fox, Project Sunshine"
+        DRCSPLASH resources/wiiu/meta/drc.png
+        ICON resources/wiiu/meta/icon.png
+        TVSPLASH resources/wiiu/meta/tv.png
+        CONTENT resources/wiiu/content
+    )
+else()
+    message(FATAL_ERROR "Platform is not supported or incorrectly provided!")
+endif()
