@@ -58,6 +58,14 @@ set(WIIU_SOURCES
     src/wiiu/wiiu_file_system.h
 )
 
+set(WUHBTOOL_NAME "UNDERTALE")
+set(WUHBTOOL_SHORTNAME "UNDERTALE")
+set(WUHBTOOL_AUTHOR "Toby Fox, Project Sunshine")
+
+set(WUHBTOOL_DRCSPLASH resources/wiiu/meta/drc.png)
+set(WUHBTOOL_ICON resources/wiiu/meta/icon.png)
+set(WUHBTOOL_TVSPLASH resources/wiiu/meta/tv.png)
+
 include_directories(vendor)
 
 find_package(SDL2 REQUIRED)
@@ -71,4 +79,5 @@ add_executable(
 target_link_libraries(Cinnamon PRIVATE SDL2::SDL2)
 
 wut_create_rpx(Cinnamon)
+
 wut_create_wuhb(Cinnamon)
