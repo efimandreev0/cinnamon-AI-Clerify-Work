@@ -26,6 +26,9 @@
 *.a
 *.lib
 
+# Resource dir
+resources/wiiu/content
+
 # Build directories
 build-n3ds/
 build-wiiu/
